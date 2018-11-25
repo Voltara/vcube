@@ -467,13 +467,13 @@ TEST(Cube, NumericMoves) {
 	CHECK(cube::from_movev({0,3,6,9,12,15,1,4,7,10,13,16,2,5,8,11,14,17}) == cube::from_moves("URFDLBU2R2F2D2L2B2U'R'F'D'L'B'"));
 }
 
-TEST(Cube, SingmasterParse) {
-	CHECK(cube::from_singmaster("uf ur ub ul df dr db dl fr fl br bl ufr urb ubl ulf drf dfl dlb dbr") == cube());
+TEST(Cube, ReidParse) {
+	CHECK(cube::from_reid("uf ur ub ul df dr db dl fr fl br bl ufr urb ubl ulf drf dfl dlb dbr") == cube());
 
 	// Cube within a cube
 	cube c = cube::from_moves("F L F U' R U F2 L2 U' L' B D' B' L2 U");
 
-	cube d = cube::from_singmaster("UF UR FL FD BR BU DB DL FR RD LU BL UFR FUL FLD FDR BUR BRD DLB BLU\n");
+	cube d = cube::from_reid("UF UR FL FD BR BU DB DL FR RD LU BL UFR FUL FLD FDR BUR BRD DLB BLU\n");
 	CHECK(c == d);
 }
 

@@ -78,9 +78,10 @@ cube cube::from_movev(const std::vector<uint8_t> &v) {
 	return c;
 }
 
-// Parse a cube position in Singmaster's notation, which has the identity:
+// Parse a cube position in the notation used by Michael Reid's solver,
+// which has the identity:
 //   UF UR UB UL DF DR DB DL FR FL BR BL UFR URB UBL ULF DRF DFL DLB DBR
-cube cube::from_singmaster(std::string s) {
+cube cube::from_reid(std::string s) {
 	uint64_t e_map = 0xfab9867452301, c_map = 0xf76541230;
 
 	constexpr char c_lookup[] = "UFRUF   ULFUL   UBLUB   URBUR   DRFDR   DFLDF   DLBDL   DBRDB";

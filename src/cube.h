@@ -176,8 +176,8 @@ class cube : public cube_base<cube> {
 	static cube from_moves(const std::string &s);
 	static cube from_movev(const std::vector<uint8_t> &v);
 
-	/* Parse a cube position in Singmaster's notation */
-	static cube from_singmaster(std::string s);
+	/* Parse a cube position in Reid's notation */
+	static cube from_reid(std::string s);
 
 	/* Parse a cube position in Speffz cycles, corners first
 	 * Corners and edges are delimited by the "." character.

@@ -36,7 +36,7 @@ using namespace vcube;
 
 enum format_t {
 	FMT_MOVES,
-	FMT_SINGMASTER,
+	FMT_REID,
 	FMT_SPEFFZ,
 };
 
@@ -149,8 +149,8 @@ int main(int argc, char * const *argv) {
 			len = strlen(optarg);
 			if (!strncmp(optarg, "moves", len)) {
 				cf.format = FMT_MOVES;
-			} else if (!strncmp(optarg, "singmaster", len)) {
-				cf.format = FMT_SINGMASTER;
+			} else if (!strncmp(optarg, "reid", len)) {
+				cf.format = FMT_REID;
 			} else if (!strncmp(optarg, "speffz", len)) {
 				cf.format = FMT_SPEFFZ;
 			} else {
@@ -251,14 +251,14 @@ void usage(const char *argv0, int status) {
 		"\n"
 		"Input formats (FORMAT):\n"
 		"  moves [default]\n"
-		"  singmaster\n"
+		"  reid\n"
 		"  speffz (buffers: corner=A, edge=U)\n"
 		"\n"
 		"Output styles (STYLE):\n"
 		"  human (U' R  F2) [default]\n"
 		"  fixed (U3R1R2)\n"
 		"\n"
-		"The Singmaster positional input format has the following identity:\n"
+		"The input format used by Michael Reid's solver has the following identity:\n"
 		"  UF UR UB UL DF DR DB DL FR FL BR BL UFR URB UBL ULF DRF DFL DLB DBR\n"
 		"\n"
 		"Speffz is a lettering scheme used in blindfolded solving.  The 24\n"
@@ -347,8 +347,8 @@ void solver(const std::string &table_filename) {
 						    case FMT_MOVES:
 							c = cube::from_moves(buf);
 							break;
-						    case FMT_SINGMASTER:
-							c = cube::from_singmaster(buf);
+						    case FMT_REID:
+							c = cube::from_reid(buf);
 							break;
 						    case FMT_SPEFFZ:
 							c = cube::from_speffz(buf, cf.speffz_buffer[0], cf.speffz_buffer[1]);

@@ -73,10 +73,9 @@ D3F3D3L1B3L3D2F2L1F1U3R1U1F2L3
 DDDFFFDDDLBBBLLLDDFFLFUUURUFFLLL
 ```
 
-#### Singmaster positional notation
+#### Michael Reid's solver notation
 
-The `--format=singmaster` option allows specifying the cube sticker by
-sticker.
+The `--format=reid` option allows specifying the cube sticker by sticker.
 
 Solved cube:
 ```

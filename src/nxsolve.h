@@ -20,6 +20,12 @@
 #include <vector>
 #include <utility>
 
+/* The nxprune table is an inconsistent heuristic, so Bidirectional PathMax
+ * can offer additional pruning opportunities.  The reduction in node
+ * expansions is very small, however.
+ */
+#define VCUBE_NX_USE_BPMX 1
+
 namespace vcube::nx {
 
 class solver_base {
@@ -137,7 +143,13 @@ class solver : public solver_base {
 				skip = axis + 3;
 				val = (prune_vals >> (4 * skip)) & 0xf;
 				auto sol = search(c6.move(m), max_depth, face, last_face_r, skip, val);
+#if VCUBE_NX_USE_BPMX
+				if (sol > max_depth + 2) {
+					return sol - 1;
+				} else if (sol == max_depth + 2) {
+#else
 				if (sol > max_depth + 1) {
+#endif
 					mask_f &= ~7L << (3 * face);
 				} else if (!sol) {
 					*movep++ = m;
@@ -157,7 +169,13 @@ class solver : public solver_base {
 				skip = axis;
 				val = (prune_vals >> (4 * skip)) & 0xf;
 				auto sol = search(c6.premove(m), max_depth, last_face, face, skip, val);
+#if VCUBE_NX_USE_BPMX
+				if (sol > max_depth + 2) {
+					return sol - 1;
+				} else if (sol == max_depth + 2) {
+#else
 				if (sol > max_depth + 1) {
+#endif
 					mask_r &= ~7L << (3 * face);
 				} else if (!sol) {
 					*movep++ = 0x80 | m;

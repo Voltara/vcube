@@ -366,7 +366,7 @@ class prune : public prune_base {
 		auto &os = idx.os[c.getCorner4Comb()];
 		auto edge = ECoord(c, os.sym);
 		auto stripe = &idx.prune[16 * (N_EDGE_STRIPE * os.offset + edge / 64)];
-		_mm_prefetch(stripe, _MM_HINT_NTA);
+		_mm_prefetch(stripe, _MM_HINT_T0);
 		return { edge, stripe };
 	}
 

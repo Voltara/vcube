@@ -50,18 +50,20 @@ static struct {
 	format_t format;
 	bool no_input;
 	bool ordered;
+	bool shm;
 } cf;
 
 static std::string base_path(const char *argv0);
 
 template<nx::EPvariant EP, nx::EOvariant EO, int Base>
-static void solver(const std::string &table_filename);
+static void solver(const std::string &table_filename, uint32_t shm_key);
 static void usage(const char *argv0, int status = EXIT_FAILURE);
 
 struct solver_variant {
 	int id;
-	void (*func)(const std::string &);
+	void (*func)(const std::string &, uint32_t shm_key);
 	std::string filename;
+	uint32_t shm_key;
 	size_t size;
 
 	bool operator < (const solver_variant &o) const {
@@ -69,7 +71,7 @@ struct solver_variant {
 	}
 
 	void operator()() {
-		func(filename);
+		func(filename, shm_key);
 	}
 
 	template<nx::EPvariant EP, nx::EOvariant EO, int Base>
@@ -77,10 +79,15 @@ struct solver_variant {
 		char filename[64];
 		sprintf(filename, "tables/nxprune_%d_%02d_%02d.dat",
 				EP + 1, (EO + 1) * 4, Base);
+		uint32_t shm_key = 0x76630000 |
+			(Base << 8) |
+			((EP + 1) << 4) |
+			((EO + 1) * 4);
 		return {
 			id,
 			solver<EP, EO, Base>,
 			filename,
+			shm_key,
 			nx::prune<nx::ecoord<EP, EO>, Base>().size()
 		};
 	}
@@ -127,6 +134,7 @@ int main(int argc, char * const *argv) {
 			{ "help",     no_argument,       0, 'h' },
 			{ "no-input", no_argument,       0, 'n' },
 			{ "ordered",  no_argument,       0, 'O' },
+			{ "shm",      no_argument,       0, 'S' },
 			{ "speffz",   optional_argument, 0, 'z' },
 			{ "style",    required_argument, 0, 's' },
 			{ "workers",  required_argument, 0, 'w' },
@@ -135,7 +143,7 @@ int main(int argc, char * const *argv) {
 
 		int option_index = 0;
 		int this_option_optind = optind ? optind : 1;
-		int c = getopt_long(argc, argv, "c:f:hnOs:w:z::", long_options, &option_index);
+		int c = getopt_long(argc, argv, "c:f:hnOSs:w:z::", long_options, &option_index);
 		if (c == -1) {
 			break;
 		}
@@ -174,6 +182,9 @@ int main(int argc, char * const *argv) {
 			break;
 		    case 'O':
 			cf.ordered = true;
+			break;
+		    case 'S':
+			cf.shm = true;
 			break;
 		    case 's':
 			len = strlen(optarg);
@@ -236,6 +247,7 @@ void usage(const char *argv0, int status) {
 		"  -z, --speffz=[C[E]]         speffz buffers (implies -f speffz)\n"
 		"  -n, --no-input              load/generate tables and exit\n"
 		"  -O, --ordered               output in the same order as input\n"
+		"  -S, --shm                   load table into shared memory\n"
 		"  -s, --style=STYLE           output style\n"
 		"  -w, --workers=NUM           worker count (default: cpu core count)\n"
 		"\n"
@@ -301,17 +313,25 @@ class cpu_clock {
 };
 
 template<nx::EPvariant EP, nx::EOvariant EO, int Base>
-void solver(const std::string &table_filename) {
+void solver(const std::string &table_filename, uint32_t shm_key) {
 	using ECoord = nx::ecoord<EP, EO>;
 	using Prune = nx::prune<ECoord, Base>;
 
 	Prune P;
 
 	std::string table_fullpath = cf.path + "/" + table_filename;
-	if (!P.load(table_fullpath)) {
-		nx::prune_generator gen(P, cf.workers);
-		gen.generate();
-		P.save(table_fullpath);
+	if (!P.loadShared(shm_key)) {
+		bool ok;
+		if (cf.shm) {
+			ok = P.loadShared(shm_key, table_fullpath);
+		} else {
+			ok = P.load(table_fullpath);
+		}
+		if (!ok) {
+			nx::prune_generator gen(P, cf.workers);
+			gen.generate();
+			P.save(table_fullpath);
+		}
 	}
 
 	if (cf.no_input) {

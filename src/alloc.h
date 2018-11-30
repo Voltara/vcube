@@ -20,6 +20,7 @@
 #define VCUBE_ALLOC_H
 
 #include <cstdlib>
+#include <stdint.h>
 
 namespace vcube {
 
@@ -29,8 +30,15 @@ class alloc {
 	static T * huge(size_t n) {
 		return (T *) huge_impl(n * sizeof(T));
 	}
+
+	template<typename T>
+	static T * shared(size_t n, uint32_t key, bool rdwr) {
+		return (T *) shared_impl(n * sizeof(T), key, rdwr);
+	}
+
     private:
 	static void * huge_impl(size_t n);
+	static void * shared_impl(size_t n, uint32_t key, bool rdwr);
 };
 
 }

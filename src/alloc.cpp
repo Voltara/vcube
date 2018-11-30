@@ -17,7 +17,14 @@
  */
 
 #include <sys/mman.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #include "alloc.h"
+
+// Missing in the header
+#ifndef SHM_HUGE_SHIFT
+#define SHM_HUGE_SHIFT MAP_HUGE_SHIFT
+#endif
 
 using namespace vcube;
 
@@ -47,5 +54,37 @@ void * alloc::huge_impl(size_t n) {
 		mem = map_huge(n, 0, prot, flags);  // Standard pages
 	}
 
+	return mem;
+}
+
+static void * map_shared(size_t n, uint32_t key, bool rdwr, size_t page_size) {
+	int flags = 0600;
+	if (rdwr) {
+		flags |= IPC_CREAT | IPC_EXCL;
+	}
+	if (page_size) {
+		n = num_pages(n, page_size);
+		flags |= SHM_HUGETLB | (page_size << SHM_HUGE_SHIFT);
+	}
+	int shm = shmget(key, n << page_size, flags);
+	if (shm == -1) {
+		return NULL;
+	}
+	void *mem = shmat(shm, NULL, rdwr ? 0 : SHM_RDONLY);
+	return (mem == (void *) -1) ? NULL : mem;
+}
+
+void * alloc::shared_impl(size_t n, uint32_t key, bool rdwr) {
+	void *mem = NULL;
+	if (rdwr) {
+		// Huge page setting is relevant only on create
+		mem = map_shared(n, key, rdwr, 30);         // 1GB pages
+		if (!mem) {
+			mem = map_shared(n, key, rdwr, 21); // 2MB pages
+		}
+	}
+	if (!mem) {
+		mem = map_shared(n, key, rdwr, 0);
+	}
 	return mem;
 }

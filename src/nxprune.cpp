@@ -100,12 +100,14 @@ bool prune_base::save(const std::string &filename) const {
 }
 
 bool prune_base::load(const std::string &filename) {
+	size_t sz = stride * N_CORNER_SYM;
+
 	FILE *fp = fopen(filename.c_str(), "r");
 	if (!fp) {
 		return false;
 	}
 
-	auto mem = alloc::huge<uint8_t>(stride * N_CORNER_SYM);
+	auto mem = alloc::huge<uint8_t>(sz);
 	if (!mem) {
 		fclose(fp);
 		return false;
@@ -116,12 +118,47 @@ bool prune_base::load(const std::string &filename) {
 		return false;
 	}
 
-	if (n == N_CORNER_SYM) {
-		setPrune(mem);
-		return true;
+	if (n != N_CORNER_SYM) {
+		return false;
 	}
 
-	return false;
+	setPrune(mem);
+
+	return true;
+}
+
+bool prune_base::loadShared(uint32_t key, const std::string &filename) {
+	size_t sz = stride * N_CORNER_SYM;
+
+	auto mem = alloc::shared<uint8_t>(sz, key, false);
+	if (!mem) {
+		if (filename.empty()) {
+			return false;
+		}
+
+		mem = alloc::shared<uint8_t>(sz, key, true);
+		if (!mem) {
+			return false;
+		}
+
+		FILE *fp = fopen(filename.c_str(), "r");
+		if (!fp) {
+			return false;
+		}
+
+		size_t n = fread(mem, stride, N_CORNER_SYM, fp);
+		if (fclose(fp)) {
+			return false;
+		}
+
+		if (n != N_CORNER_SYM) {
+			return false;
+		}
+	}
+
+	setPrune(mem);
+
+	return true;
 }
 
 std::vector<vcube::cube> prune_base::getCornerRepresentatives() const {

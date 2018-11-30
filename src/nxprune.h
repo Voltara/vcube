@@ -312,6 +312,7 @@ class prune_base {
 
 	bool save(const std::string &filename) const;
 	bool load(const std::string &filename);
+	bool loadShared(uint32_t key, const std::string &filename = "");
 
     protected:
 	prune_base(size_t stride);

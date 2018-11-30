@@ -180,6 +180,39 @@ speed and tightening memory timings can improve the speed of the solver.
 Memory modules that support XMP (Extreme Memory Profile) makes it easy to
 overclock with manufacturer supplied timings.
 
+### Shared memory
+
+Pruning tables can be loaded into shared memory for faster startup times.
+Once loaded into shared memory, a table will remain there until reboot.
+
+To load a table into shared memory:
+```
+./vc-optimal --coord=308 --no-input --shm
+```
+
+Subsequent invocations of `vc-optimal` will use the shared memory copy
+of the table (the `--shm` option is only required for the initial load.)
+
+Use the `ipcs` and `ipcrm` Linux commands to view/remove the shared
+memory tables.  All vcube tables have keys which start with `0x7663`,
+which is ASCII for "vc".  The last two hex digits of the key identify
+the table coordinate (`38` for `--coord=308`, `2b` for `--coord=212`,
+etc.)
+```
+ipcs -m
+
+------ Shared Memory Segments --------
+key        shmid      owner      perms      bytes      nattch     status
+0x76630a38 10551301   voltara    600        23622320128 1
+```
+
+To remove a table which is not needed anymore (or is corrupt because
+it was interrupted while loading):
+```
+# Replace 0x76630a38 with the key for the table you want to remove
+ipcrm -M 0x76630a38
+```
+
 ## Authors
 
 * Andrew Skalski ([Voltara](https://github.com/Voltara) on GitHub)

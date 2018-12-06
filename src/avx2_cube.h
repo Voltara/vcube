@@ -103,41 +103,32 @@ struct avx2 {
 	}
 
 	static __m256i invert(__m256i v) {
-		union cubearray_t {
-			__m256i v;
-			struct {
-				uint8_t edge[16];
-				uint8_t corner[16];
-			} a;
-		};
-
 		// Split the cube into separate perm and orient vectors
 		__m256i vperm = _mm256_and_si256(v, _mm256_set1_epi8(0x0f));
 		__m256i vorient = _mm256_xor_si256(v, vperm);
 
-		// Invert the edge and corner permutations
-		cubearray_t src = { .v = vperm }, dst = { .v = identity };
-
+		// "Brute force" the inverse of the permutation
+		__m256i vi = _mm256_set_epi64x(
+				0x0f0e0d0c00000000, 0x0000000000000000,
+				0x0f0e0d0c00000000, 0x0000000000000000);
 		for (int i = 0; i < 12; i++) {
-			dst.a.edge[src.a.edge[i]] = i;
-		}
-
-		for (int i = 0; i < 8; i++) {
-			dst.a.corner[src.a.corner[i]] = i;
+			__m256i vtrial = _mm256_set1_epi8(i);
+			__m256i vcorrect = _mm256_cmpeq_epi8(identity, _mm256_shuffle_epi8(vperm, vtrial));
+			vi = _mm256_or_si256(vi, _mm256_and_si256(vtrial, vcorrect));
 		}
 
 		// Invert the corner orientations
 		const __m256i vcarry_corners = _mm256_set_epi64x(
 				0x3030303030303030, 0x3030303030303030,
 				0x1010101010101010, 0x1010101010101010);
-		vorient = _mm256_slli_epi32(vorient, 1);
+		vorient = _mm256_add_epi8(vorient, vorient);
 		vorient = _mm256_min_epu8(vorient, _mm256_sub_epi8(vorient, vcarry_corners));
 
 		// Permute the edge and corner orientations
-		vorient = _mm256_shuffle_epi8(vorient, dst.v);
+		vorient = _mm256_shuffle_epi8(vorient, vi);
 
 		// Combine the new perm and orient
-		return _mm256_or_si256(dst.v, vorient);
+		return _mm256_or_si256(vi, vorient);
 	}
 
 	static uint64_t edges_low(__m256i v) {

@@ -204,7 +204,7 @@ class cube : public cube_base<cube> {
 		return v;
 	}
 
-	/* Invert the cube (88M/sec, 120M/sec pipelined) */
+	/* Invert the cube (192M/sec, 243M/sec pipelined) */
 	cube operator ~ () const {
 		return avx2::invert(v);
 	}

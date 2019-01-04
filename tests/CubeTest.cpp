@@ -365,6 +365,39 @@ TEST(Cube, CubeLessThan) {
 		CHECK_TEXT(c != d, "Rolled the same cube twice in a row?");
 		CHECK_TEXT((c < d) ^ (d < c), "Exactly one of (c < d) or (d < c) should be true");
 	}
+
+	// Identity cube assumptions
+	c = cube(), d = cube();
+	CHECK_FALSE_TEXT(c < d, "Identity cube was less than itself");
+	CHECK_TEXT(t::to_array(c)[0] == 0, "Identity cube did not have 0 in position 0");
+	CHECK_TEXT(t::to_array(c)[15] == 15, "Identity cube did not have 15 in position 15");
+	CHECK_TEXT(t::to_array(c)[16] == 0, "Identity cube did not have 0 in position 16");
+	CHECK_TEXT(t::to_array(c)[31] == 15, "Identity cube did not have 15 in position 31");
+
+	// Least-significant position
+	c = cube(), d = cube();
+	t::to_array(d)[0] = 1;
+	CHECK_TEXT(      c < d, "Position 0: 0 was not less than 1");
+	CHECK_FALSE_TEXT(d < c, "Position 0: 1 was less than 0");
+
+	// Middle position
+	c = cube(), d = cube();
+	t::to_array(d)[16] = 1;
+	CHECK_TEXT(      c < d, "Position 16: 0 was not less than 1");
+	CHECK_FALSE_TEXT(d < c, "Position 16: 1 was less than 0");
+
+	// Higher position takes higher precedence
+	c = cube(), d = cube();
+	t::to_array(c)[0]  = 1; // c is greater in position 0
+	t::to_array(d)[16] = 1; // d is greater in position 16
+	CHECK_TEXT(      c < d, "Position 16: 0 was not less than 1 (precedence)");
+	CHECK_FALSE_TEXT(d < c, "Position 16: 1 was less than 0 (precedence)");
+
+	// Most-significant position
+	c = cube(), d = cube();
+	t::to_array(d)[31] = 16;
+	CHECK_TEXT(      c < d, "Position 31: 15 was not less than 16");
+	CHECK_FALSE_TEXT(d < c, "Position 31: 16 was less than 15");
 }
 
 TEST(Cube, Invert) {

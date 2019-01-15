@@ -42,9 +42,17 @@ struct sse {
 	}
 
 	static bool less_than(__m128i a, __m128i b) {
+		// See avx2_cube.h
+#if 1
+		uint32_t gt = _mm_movemask_epi8(_mm_cmpgt_epi8(a, b));
+		uint32_t lt = _mm_movemask_epi8(_mm_cmpgt_epi8(b, a));
+		return gt < lt;
+#else
 		uint32_t eq = _mm_movemask_epi8(_mm_cmpeq_epi8(a, b));
-		uint32_t lt = _mm_movemask_epi8(_mm_cmpgt_epi8(a, b));
-		return (lt << 1) + eq < eq;
+		uint32_t lt = _mm_movemask_epi8(_mm_cmpgt_epi8(b, a));
+		uint32_t sum = (lt << 1) + eq;
+		return sum < lt;
+#endif
 	}
 
 	static __m128i edge_compose(__m128i a, __m128i b) {

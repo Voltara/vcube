@@ -57,15 +57,22 @@ struct avx2 {
 	}
 
 	static bool less_than(__m256i a, __m256i b) {
+#if 1
+		// One fewer instruction, except when used together with equals()
+		uint32_t gt = _mm256_movemask_epi8(_mm256_cmpgt_epi8(a, b));
+		uint32_t lt = _mm256_movemask_epi8(_mm256_cmpgt_epi8(b, a));
+		return gt < lt;
+#else
 		/* Check that the most-significant 1-bit in "lt" is
 		 * preceded by all 1-bits in "eq" by testing whether
 		 * addition causes a rollover.
 		 */
-		uint32_t eq = _mm256_movemask_epi8(_mm256_cmpeq_epi8(b, a));
+		uint32_t eq = _mm256_movemask_epi8(_mm256_cmpeq_epi8(a, b));
 		uint32_t lt = _mm256_movemask_epi8(_mm256_cmpgt_epi8(b, a));
 		// Invariant: (eq & lt) == 0
 		uint32_t sum = (lt << 1) + eq;
 		return sum < lt;
+#endif
 	}
 
 	static __m256i compose(__m256i a, __m256i b, bool mirror = false) {

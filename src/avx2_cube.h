@@ -194,7 +194,7 @@ struct avx2 {
 	}
 
 	static corient_t corner_orient_raw(__m256i v) {
-#ifdef __AVX__
+#ifdef __AVX2__
 		__m256i vorient = _mm256_unpacklo_epi8(
 				_mm256_slli_epi32(v, 3),
 				_mm256_slli_epi32(v, 2));
@@ -209,7 +209,7 @@ struct avx2 {
 	}
 
 	static __m256i invert(__m256i v) {
-#ifdef __AVX__
+#ifdef __AVX2__
 		// Split the cube into separate perm and orient vectors
 		__m256i vperm = _mm256_and_si256(v, _mm256_set1_epi8(0x0f));
 		__m256i vorient = _mm256_xor_si256(v, vperm);
@@ -277,7 +277,7 @@ struct avx2 {
 	}
 
 	static uint64_t edges_low(__m256i v) {
-#ifdef __AVX__
+#ifdef __AVX2__
 		return _mm256_extract_epi64(v, 0);
 #else
 		auto x = reinterpret_cast<__m128i *>(&v);
@@ -286,7 +286,7 @@ struct avx2 {
 	}
 
 	static uint64_t edges_high(__m256i v) {
-#ifdef __AVX__
+#ifdef __AVX2__
 		return _mm256_extract_epi64(v, 1);
 #else
 		auto x = reinterpret_cast<__m128i *>(&v);
@@ -295,7 +295,7 @@ struct avx2 {
 	}
 
 	static uint64_t corners(__m256i v) {
-#ifdef __AVX__
+#ifdef __AVX2__
 		return _mm256_extract_epi64(v, 2);
 #else
 		auto x = reinterpret_cast<__m128i *>(&v);

@@ -133,23 +133,30 @@ struct avx2 {
 #else
 		/* 27720 (11*9*8*7*5) is the LCM of all possible cycle decompositions,
 		 * so we can invert the permutation by raising it to the 27719th power.
-		 * This method tested marginally faster (1-2%) than the above "brute force".
+		 * This method tested faster (9-10%) than the above "brute force".
+		 * The addition chain for 27719 was generated using the calculator
+		 * provided by Achim Flammenkamp on his website:
+		 *   http://wwwhomes.uni-bielefeld.de/achim/addition_chain.html
 		 */
-		__m256i vi = vperm;
-		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
-		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
+		__m256i vp3 = _mm256_shuffle_epi8(vperm, vperm); // 2
+		vp3 = _mm256_shuffle_epi8(vp3, vperm);           // 3 (+1)
+		__m256i vi = _mm256_shuffle_epi8(vp3, vp3);      // 6
+		vi = _mm256_shuffle_epi8(vi, vi);                // 12
+		vi = _mm256_shuffle_epi8(vi, vi);                // 24
+		vi = _mm256_shuffle_epi8(vi, vp3);               // 27 (+3)
+		vi = _mm256_shuffle_epi8(vi, vi);                // 54
+		vi = _mm256_shuffle_epi8(vi, vi);                // 108
+		vi = _mm256_shuffle_epi8(vi, vi);                // 216
+		vi = _mm256_shuffle_epi8(vi, vi);                // 432
+		vi = _mm256_shuffle_epi8(vi, vperm);             // 433 (+1)
+		vi = _mm256_shuffle_epi8(vi, vi);                // 866
+		vi = _mm256_shuffle_epi8(vi, vi);                // 1732
+		vi = _mm256_shuffle_epi8(vi, vi);                // 3464
+		vi = _mm256_shuffle_epi8(vi, vi);                // 6928
+		vi = _mm256_shuffle_epi8(vi, vi);                // 13856
+		vi = _mm256_shuffle_epi8(vi, vp3);               // 13859 (+3)
+		vi = _mm256_shuffle_epi8(vi, vi);                // 27718
+		vi = _mm256_shuffle_epi8(vi, vperm);             // 27719 (+1)
 #endif
 
 		// Invert the corner orientations

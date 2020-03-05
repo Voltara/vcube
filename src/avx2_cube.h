@@ -120,6 +120,7 @@ struct avx2 {
 		__m256i vperm = _mm256_and_si256(v, _mm256_set1_epi8(0x0f));
 		__m256i vorient = _mm256_xor_si256(v, vperm);
 
+#if 0
 		// "Brute force" the inverse of the permutation
 		__m256i vi = _mm256_set_epi64x(
 				0x0f0e0d0c00000000, 0x0000000000000000,
@@ -129,6 +130,27 @@ struct avx2 {
 			__m256i vcorrect = _mm256_cmpeq_epi8(identity, _mm256_shuffle_epi8(vperm, vtrial));
 			vi = _mm256_or_si256(vi, _mm256_and_si256(vtrial, vcorrect));
 		}
+#else
+		/* 27720 (11*9*8*7*5) is the LCM of all possible cycle decompositions,
+		 * so we can invert the permutation by raising it to the 27719th power.
+		 * This method tested marginally faster (1-2%) than the above "brute force".
+		 */
+		__m256i vi = vperm;
+		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
+		vperm = _mm256_shuffle_epi8(vperm, vperm); vi = _mm256_shuffle_epi8(vi, vperm);
+#endif
 
 		// Invert the corner orientations
 		const __m256i vcarry_corners = _mm256_set_epi64x(

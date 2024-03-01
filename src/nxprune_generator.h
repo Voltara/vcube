@@ -70,6 +70,10 @@ class prune_generator {
 		mem[0] = 0xc0;
 		uint64_t found = 1;
 
+		// Filter to speed up passes where the frontier is sparse
+		std::vector<uint8_t> dirty(N_CORNER_SYM, 255);
+		dirty[0] = 0;
+
 		for (int depth = 0; depth <= Prune::BASE + 1; depth++) {
 			// Upon reaching the pruning table base value, zero
 			// all visited positions.  This will leave two distinct
@@ -119,6 +123,16 @@ class prune_generator {
 								idx++;
 								continue;
 							}
+
+							if (depth < dirty[n.first] && depth < dirty[n.second]) {
+								done[idx++] = true;
+								continue;
+							} else if (depth < dirty[n.first]) {
+								dirty[n.first] = depth + 1;
+							} else if (depth < dirty[n.second]) {
+								dirty[n.second] = depth + 1;
+							}
+
 							ok = done[idx++] = busy[n.first] = busy[n.second] = true;
 							mtx.unlock();
 

@@ -51,6 +51,8 @@ static struct {
 	bool no_input;
 	bool ordered;
 	bool shm;
+	bool inverse;
+	uint32_t depth;
 } cf;
 
 static std::string base_path(const char *argv0);
@@ -126,12 +128,16 @@ int main(int argc, char * const *argv) {
 	cf.speffz_buffer = { 'A', 'U' };
 	cf.no_input = false;
 	cf.ordered = false;
+	cf.inverse = false;
+	cf.depth = 20;
 
 	for (;;) {
 		static struct option long_options[] = {
 			{ "coord",    required_argument, 0, 'c' },
+			{ "depth",    required_argument, 0, 'd' },
 			{ "format",   required_argument, 0, 'f' },
 			{ "help",     no_argument,       0, 'h' },
+			{ "inverse",  no_argument,       0, 'i' },
 			{ "no-input", no_argument,       0, 'n' },
 			{ "ordered",  no_argument,       0, 'O' },
 			{ "shm",      no_argument,       0, 'S' },
@@ -143,7 +149,7 @@ int main(int argc, char * const *argv) {
 
 		int option_index = 0;
 		int this_option_optind = optind ? optind : 1;
-		int c = getopt_long(argc, argv, "c:f:hnOSs:w:z::", long_options, &option_index);
+		int c = getopt_long(argc, argv, "c:d:f:hinOSs:w:z::", long_options, &option_index);
 		if (c == -1) {
 			break;
 		}
@@ -152,6 +158,9 @@ int main(int argc, char * const *argv) {
 		switch (c) {
 		    case 'c':
 			cf.coord = strtoul(optarg, NULL, 10);
+			break;
+		    case 'd':
+			cf.depth = strtoul(optarg, NULL, 10);
 			break;
 		    case 'f':
 			len = strlen(optarg);
@@ -197,6 +206,9 @@ int main(int argc, char * const *argv) {
 				usage(argv[0]);
 			}
 			break;
+		    case 'i':
+			cf.inverse = true;
+			break;
 		    case 'w':
 			cf.workers = strtoul(optarg, NULL, 10);
 			break;
@@ -228,7 +240,7 @@ std::string format_table_size(size_t n) {
 }
 
 void usage(const char *argv0, int status) {
-	fprintf(stderr, "Usage: %s [OPTION]...\n", argv0);
+	fprintf(stdout, "Usage: %s [OPTION]...\n", argv0);
 	fputs(	 /**********************************************************************/
 		"Optimal half-turn metric Rubik's cube solver.\n"
 		"\n"
@@ -243,19 +255,21 @@ void usage(const char *argv0, int status) {
 		"Options:\n"
 		"  -h, --help\n"
 		"  -c, --coord=COORD           pruning coordinate variant\n"
+		"  -d, --depth=DEPTH           maximum depth to search\n"
 		"  -f, --format=FORMAT         input format\n"
 		"  -z, --speffz=[C[E]]         speffz buffers (implies -f speffz)\n"
 		"  -n, --no-input              load/generate tables and exit\n"
 		"  -O, --ordered               output in the same order as input\n"
 		"  -S, --shm                   load table into shared memory\n"
 		"  -s, --style=STYLE           output style\n"
+		"  -i, --inverse               output scrambles instead of solutions\n"
 		"  -w, --workers=NUM           worker count (default: cpu core count)\n"
 		"\n"
 		"Pruning coordinate variants (COORD):\n"
-		, stderr);
+		, stdout);
 	std::sort(solvers.begin(), solvers.end());
 	for (auto &S : solvers) {
-		fprintf(stderr, "  %3d (%s)%s\n",
+		fprintf(stdout, "  %3d (%s)%s\n",
 				S.id, format_table_size(S.size).c_str(),
 				S.id == DEFAULT_VARIANT ? " [default]" : "");
 	}
@@ -284,7 +298,7 @@ void usage(const char *argv0, int status) {
 		"\n"
 		"Example speffz input notation (A/U buffers) for nested cubes pattern:\n"
 		"  olpibpMH.etlaol == U' R D' F' R U2 R2 U' R' U R2 L D' L' F2 D2 R'\n"
-		, stderr);
+		, stdout);
 	exit(status);
 }
 
@@ -374,9 +388,10 @@ void solver(const std::string &table_filename, uint32_t shm_key) {
 							c = cube::from_speffz(buf, cf.speffz_buffer[0], cf.speffz_buffer[1]);
 							break;
 						}
+						if (cf.inverse) c = ~c;
 
 						auto t0 = std::chrono::steady_clock::now();
-						auto moves = S.solve(c);
+						auto moves = S.solve(c, cf.depth);
 						std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - t0;
 
 						moveseq::canonicalize(moves);

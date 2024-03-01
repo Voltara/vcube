@@ -91,7 +91,6 @@ cube cube::from_reid(std::string s) {
 	uint8_t *edge   = reinterpret_cast<uint8_t*>(&c.ev());
 	uint8_t *corner = reinterpret_cast<uint8_t*>(&c.cv());
 
-	s.c_str();
 	for (auto &ch : s) {
 		ch = toupper(ch);
 	}
@@ -102,7 +101,7 @@ cube cube::from_reid(std::string s) {
 	const char *ws = " \t\r\n";
 	for (char *saveptr, *tok = strtok_r(&s[0], ws, &saveptr); tok; tok = strtok_r(NULL, ws, &saveptr)) {
 		int len = strlen(tok);
-		char *p;
+		const char *p;
 		switch (strlen(tok)) {
 		    case 2:
 			if ((p = strstr(e_lookup, tok))) {

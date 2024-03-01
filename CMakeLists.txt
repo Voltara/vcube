@@ -17,13 +17,15 @@
 
 cmake_minimum_required (VERSION 3.5)
 
+project(vcube)
+
 # Need -std=c++17 for proper alignment of AVX variables in std::vector
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mlzcnt -mbmi -mbmi2 -mavx2 -flax-vector-conversions -std=c++17")
 
 # The Clang compiler currently produces faster code than GCC for this project
-set(CMAKE_C_COMPILER "clang" CACHE string "clang compiler" FORCE)
-set(CMAKE_CXX_COMPILER "clang++" CACHE string "clang++ compiler" FORCE)
+set(CMAKE_C_COMPILER "clang" CACHE STRING "clang compiler" FORCE)
+set(CMAKE_CXX_COMPILER "clang++" CACHE STRING "clang++ compiler" FORCE)
 
 add_executable(gen-const-cubes
 	src/gen-const-cubes.cpp

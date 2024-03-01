@@ -19,6 +19,8 @@
 #ifndef VCUBE_TYPES_H
 #define VCUBE_TYPES_H
 
+#include <cstdint>
+
 namespace vcube {
 
 using eorient_t = uint32_t;

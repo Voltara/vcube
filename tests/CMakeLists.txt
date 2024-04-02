@@ -34,6 +34,7 @@ add_executable(check
 	CubeTest.cpp
 	Cube6Test.cpp
 	EdgeCubeTest.cpp
+	MoveSeqTest.cpp
 	NxPruneTest.cpp
 	)
 target_link_libraries(check vcube ${CPPUTEST_LDFLAGS})

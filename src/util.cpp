@@ -20,17 +20,60 @@
 
 using namespace vcube;
 
-void moveseq::canonicalize(moveseq_t &moves) {
+// Parse a move sequence loosely; supports multiple formats such as
+// "U R2 F'", "U1R2F3", "URRFFF".  Input is not validated, and anything
+// unexpected is treated as a delimiter.
+moveseq_t moveseq_t::parse(const std::string &s) {
+	moveseq_t moves;
+
+	int face = -1;
+	for (auto ch : s) {
+		int f = -1, power = -1;
+		switch (ch) {
+		    case 'u': case 'U': f =  0; break;
+		    case 'r': case 'R': f =  3; break;
+		    case 'f': case 'F': f =  6; break;
+		    case 'd': case 'D': f =  9; break;
+		    case 'l': case 'L': f = 12; break;
+		    case 'b': case 'B': f = 15; break;
+		    case '3': case '\'': power = 2; break;
+		    case '2': power = 1; break;
+		    case '1': power = 0; break;
+		    default:  power = 0;
+		}
+
+		if (f != -1) {
+			if (face != -1) {
+				moves.push_back(face);
+			}
+			face = f;
+		} else if (power != -1 && face != -1) {
+			moves.push_back(face + power);
+			face = -1;
+		}
+	}
+
+	if (face != -1) {
+		moves.push_back(face);
+	}
+
+	return moves;
+}
+
+moveseq_t moveseq_t::canonical() const {
+	if (empty()) {
+		return {};
+	}
+
+	moveseq_t canon = *this;
+
 	// Append a dummy move different from the final axis to ensure
 	// the final moves are flushed
-	if (moves.empty()) {
-		return;
-	}
-	moves.push_back(moves.back() + 3);
+	canon.push_back(canon.back() + 3);
 
 	uint8_t last_axis = 0, power[2] = { 0, 0 };
-	auto tail = moves.begin();
-	for (auto m : moves) {
+	auto tail = canon.begin();
+	for (auto m : canon) {
 		auto axis = (m / 3) % 3;
 		if (axis != last_axis) {
 			for (int pole = 0; pole < 2; pole++) {
@@ -44,16 +87,18 @@ void moveseq::canonicalize(moveseq_t &moves) {
 		power[m >= 9] += (m % 3) + 1;
 	}
 
-	moves.resize(tail - moves.begin());
+	canon.resize(tail - canon.begin());
+
+	return canon;
 }
 
-std::string moveseq::to_string(const moveseq_t &moves, style_t style) {
+std::string moveseq_t::to_string(style_t style) const {
 	const char *face = "URFDLB";
 	const char *power = (style == FIXED) ? "123" : " 2'";
 	bool delim = (style != FIXED);
 
 	std::string s;
-	for (auto m : moves) {
+	for (auto m : *this) {
 		s.push_back(face[m / 3]);
 		s.push_back(power[m % 3]);
 		if (delim) {

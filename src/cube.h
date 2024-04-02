@@ -173,11 +173,17 @@ class cube : public cube_base<cube> {
 	}
 
 	/* Parse a move sequence */
-	static cube from_moves(const std::string &s);
-	static cube from_movev(const std::vector<uint8_t> &v);
+	static cube from_moveseq(const moveseq_t &v);
+
+	static cube from_moves(const std::string &s) {
+		return from_moveseq(moveseq_t::parse(s));
+	}
 
 	/* Parse a cube position in Reid's notation */
 	static cube from_reid(std::string s);
+
+	/* Convert a cube to Reid's notation */
+	std::string to_reid() const;
 
 	/* Parse a cube position in Speffz cycles, corners first
 	 * Corners and edges are delimited by the "." character.

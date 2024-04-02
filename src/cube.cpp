@@ -22,55 +22,8 @@
 
 using namespace vcube;
 
-// Parse a move sequence; supports multiple formats such as "U R2 F'", "U1R2F3", "URRFFF"
-cube cube::from_moves(const std::string &s) {
-	cube c;
-
-	int face = -1;
-	for (auto ch : s) {
-		int f = -1, power = -1;
-		switch (ch) {
-		    case 'u': case 'U': f =  0; break;
-		    case 'r': case 'R': f =  3; break;
-		    case 'f': case 'F': f =  6; break;
-		    case 'd': case 'D': f =  9; break;
-		    case 'l': case 'L': f = 12; break;
-		    case 'b': case 'B': f = 15; break;
-		    case '3': case '\'': power = 2; break;
-		    case '2': power = 1; break;
-		    case '1': power = 0; break;
-		    default: 
-			      // End move on whitespace or unknown character
-			      power = 0;
-		}
-
-		if (f != -1) {
-			// Flush previous move if two faces in a row "UR"
-			if (face != -1) {
-				c = c.move(face);
-			}
-			face = f;
-		}
-
-		if (power != -1) {
-			if (face != -1) {
-				c = c.move(face + power);
-				face = -1;
-			}
-			power = -1;
-		}
-	}
-
-	// Handle face at end of string "....U"
-	if (face != -1) {
-		c = c.move(face);
-	}
-
-	return c;
-}
-
 // Vector of numeric moves
-cube cube::from_movev(const std::vector<uint8_t> &v) {
+cube cube::from_moveseq(const moveseq_t &v) {
 	cube c;
 	for (auto m : v) {
 		c = c.move(m);
@@ -78,14 +31,20 @@ cube cube::from_movev(const std::vector<uint8_t> &v) {
 	return c;
 }
 
+namespace reid {
+	constexpr uint64_t E_MAP = 0xfab9867452301;
+	constexpr uint64_t C_MAP = 0xf76541230;
+
+	constexpr char C_LOOKUP[] = "UFRUF   ULFUL   UBLUB   URBUR   DRFDR   DFLDF   DLBDL   DBRDB";
+	constexpr char E_LOOKUP[] = "URU UFU ULU UBU DRD DFD DLD DBD FRF FLF BLB BRB";
+}
+
 // Parse a cube position in the notation used by Michael Reid's solver,
 // which has the identity:
 //   UF UR UB UL DF DR DB DL FR FL BR BL UFR URB UBL ULF DRF DFL DLB DBR
 cube cube::from_reid(std::string s) {
-	uint64_t e_map = 0xfab9867452301, c_map = 0xf76541230;
-
-	constexpr char c_lookup[] = "UFRUF   ULFUL   UBLUB   URBUR   DRFDR   DFLDF   DLBDL   DBRDB";
-	constexpr char e_lookup[] = "URU UFU ULU UBU DRD DFD DLD DBD FRF FLF BLB BRB";
+	using namespace reid;
+	uint64_t e_map = E_MAP, c_map = C_MAP;
 
 	cube c;
 	uint8_t *edge   = reinterpret_cast<uint8_t*>(&c.ev());
@@ -104,8 +63,8 @@ cube cube::from_reid(std::string s) {
 		const char *p;
 		switch (strlen(tok)) {
 		    case 2:
-			if ((p = strstr(e_lookup, tok))) {
-				int offset = p - e_lookup;
+			if ((p = strstr(E_LOOKUP, tok))) {
+				int offset = p - E_LOOKUP;
 				edge[e_map & 0xf] = (offset >> 2) | ((offset << 4) & 0x10);
 				e_map >>= 4;
 				edges_todo ^= 1 << (offset >> 2);
@@ -113,8 +72,8 @@ cube cube::from_reid(std::string s) {
 			}
 			break;
 		    case 3:
-			if ((p = strstr(c_lookup, tok))) {
-				int offset = p - c_lookup;
+			if ((p = strstr(C_LOOKUP, tok))) {
+				int offset = p - C_LOOKUP;
 				corner[c_map & 0xf] = (offset >> 3) | ((offset << 4) & 0x30);
 				c_map >>= 4;
 				corners_todo ^= 1 << (offset >> 3);
@@ -140,6 +99,42 @@ cube cube::from_reid(std::string s) {
 	}
 
 	return c;
+}
+
+std::string cube::to_reid() const {
+	using namespace reid;
+
+	cube tmp = *this;
+	auto edge   = reinterpret_cast<const uint8_t *>(&tmp.ev());
+	auto corner = reinterpret_cast<const uint8_t *>(&tmp.cv());
+
+	uint64_t e_map = E_MAP, c_map = C_MAP;
+
+	std::string s;
+
+	for (int i = 0; i < 12; i++) {
+		auto e = edge[e_map & 0xf];
+		e_map >>= 4;
+		auto idx = 4 * (e & 0xf) + (e >> 4);
+		for (int i = 0; i < 2; i++) {
+			s.push_back(E_LOOKUP[idx++]);
+		}
+		s.push_back(' ');
+	}
+
+	for (int i = 0; i < 8; i++) {
+		auto c = corner[c_map & 0xf];
+		c_map >>= 4;
+		auto idx = 8 * (c & 0xf) + (c >> 4);
+		for (int i = 0; i < 3; i++) {
+			s.push_back(C_LOOKUP[idx++]);
+		}
+		s.push_back(' ');
+	}
+
+	s.pop_back();
+
+	return s;
 }
 
 // Parse a cube position in Speffz lettering, corners first

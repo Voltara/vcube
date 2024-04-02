@@ -257,7 +257,7 @@ class solver : public solver_base {
 	}
 
 	auto get_moves(uint8_t len) const {
-		std::vector<uint8_t> m(len);
+		moveseq_t m(len);
 		auto mi_f = m.begin();
 		auto mi_r = m.rbegin();
 		for (int i = len - 1; i >= 0; i--) {

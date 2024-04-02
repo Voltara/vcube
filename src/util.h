@@ -118,12 +118,15 @@ extern inline auto rank_4perm_oddeven(uint8_t bits) {
 	return tbl[bits];
 }
 
-namespace moveseq {
+struct moveseq_t : public std::vector<uint8_t> {
 	enum style_t { SINGMASTER, FIXED };
-	using moveseq_t = std::vector<uint8_t>;
 
-	void canonicalize(moveseq_t &moves);
-	std::string to_string(const moveseq_t &moves, style_t style = SINGMASTER);
+	using std::vector<uint8_t>::vector;
+
+	static moveseq_t parse(const std::string &);
+
+	moveseq_t canonical() const;
+	std::string to_string(style_t style = SINGMASTER) const;
 };
 
 }

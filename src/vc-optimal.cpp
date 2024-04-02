@@ -45,7 +45,7 @@ static struct {
 	std::string path;
 	uint32_t workers;
 	uint32_t coord;
-	moveseq::style_t style;
+	moveseq_t::style_t style;
 	std::array<int, 2> speffz_buffer;
 	format_t format;
 	bool no_input;
@@ -123,7 +123,7 @@ int main(int argc, char * const *argv) {
 	cf.path = base_path(argv[0]);
 	cf.workers = std::max(1U, std::thread::hardware_concurrency());
 	cf.coord = DEFAULT_VARIANT;
-	cf.style = moveseq::SINGMASTER;
+	cf.style = moveseq_t::SINGMASTER;
 	cf.format = FMT_MOVES;
 	cf.speffz_buffer = { 'A', 'U' };
 	cf.no_input = false;
@@ -198,9 +198,9 @@ int main(int argc, char * const *argv) {
 		    case 's':
 			len = strlen(optarg);
 			if (!strncmp(optarg, "human", len)) {
-				cf.style = moveseq::SINGMASTER;
+				cf.style = moveseq_t::SINGMASTER;
 			} else if (!strncmp(optarg, "fixed", len)) {
-				cf.style = moveseq::FIXED;
+				cf.style = moveseq_t::FIXED;
 			} else {
 				fprintf(stderr, "Unsupported output style '%s'\n", optarg);
 				usage(argv[0]);
@@ -394,8 +394,8 @@ void solver(const std::string &table_filename, uint32_t shm_key) {
 						auto moves = S.solve(c, cf.depth);
 						std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - t0;
 
-						moveseq::canonicalize(moves);
-						std::string solution = moveseq::to_string(moves, cf.style);
+						moves = moves.canonical();
+						std::string solution = moves.to_string(cf.style);
 
 						snprintf(buf, sizeof(buf), "%lu %.9f %lu %s",
 								solution_id,

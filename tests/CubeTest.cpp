@@ -496,18 +496,31 @@ TEST(Cube, MoveParse) {
 }
 
 TEST(Cube, NumericMoves) {
-	CHECK(cube::from_movev({}) == cube());
-	CHECK(cube::from_movev({0,3,6,9,12,15,1,4,7,10,13,16,2,5,8,11,14,17}) == cube::from_moves("URFDLBU2R2F2D2L2B2U'R'F'D'L'B'"));
+	CHECK(cube::from_moveseq({}) == cube());
+	CHECK(cube::from_moveseq({0,3,6,9,12,15,1,4,7,10,13,16,2,5,8,11,14,17}) == cube::from_moves("URFDLBU2R2F2D2L2B2U'R'F'D'L'B'"));
 }
 
-TEST(Cube, ReidParse) {
-	CHECK(cube::from_reid("uf ur ub ul df dr db dl fr fl br bl ufr urb ubl ulf drf dfl dlb dbr") == cube());
+TEST(Cube, ReidNotationIdentity) {
+	const std::string IDENTITY_LOWER = "uf ur ub ul df dr db dl fr fl br bl ufr urb ubl ulf drf dfl dlb dbr";
+	const std::string IDENTITY_UPPER = "UF UR UB UL DF DR DB DL FR FL BR BL UFR URB UBL ULF DRF DFL DLB DBR";
 
-	// Cube within a cube
+	CHECK(cube::from_reid(IDENTITY_LOWER) == cube());
+	CHECK(cube().to_reid() == IDENTITY_UPPER);
+}
+
+TEST(Cube, ReidNotationCubeWithinCube) {
+	const std::string REID = "UF UR FL FD BR BU DB DL FR RD LU BL UFR FUL FLD FDR BUR BRD DLB BLU";
+
 	cube c = cube::from_moves("F L F U' R U F2 L2 U' L' B D' B' L2 U");
+	CHECK(c.to_reid() == REID);
+	CHECK(cube::from_reid(REID + "\n") == c);
+}
 
-	cube d = cube::from_reid("UF UR FL FD BR BU DB DL FR RD LU BL UFR FUL FLD FDR BUR BRD DLB BLU\n");
-	CHECK(c == d);
+TEST(Cube, ReidRandom) {
+	for (int i = 0; i < 5; i++) {
+		cube c = t::random_cube();
+		CHECK(cube::from_reid(c.to_reid()) == c);
+	}
 }
 
 TEST(Cube, SpeffzParse) {
